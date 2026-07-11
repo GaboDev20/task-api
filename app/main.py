@@ -35,3 +35,11 @@ def delete_task(task_id: int,db: Session = Depends(get_db)):
     if tarea is None:
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     return None
+
+@app.post("/register",response_model = schemas.UserOut)
+def register(user: schemas.UserCreate, db:Session = Depends(get_db)):
+    usuario_existente = crud.get_user_by_email(db,user.email)
+    if usuario_existente is not None:
+        raise HTTPException(status_code = 400, detail = "Este Email Ya Está Registrado" )
+    return crud.create_user(db,user)
+    

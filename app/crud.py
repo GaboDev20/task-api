@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app import models, schemas
+from app.security import hash_password
 
 def get_task(db: Session, task_id: int):
     return db.query(models.Task).filter(models.Task.id == task_id).first()
@@ -33,3 +34,14 @@ def delete_task(db: Session, task_id: int):
     db.delete(tarea_existente)
     db.commit()
     return tarea_existente
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == email).first()
+
+def create_user(db: Session, user: schemas.UserCreate):
+    hashed = hash_password(user.password)
+    nuevo_usuario = models.User(email = user.email, hashed_password = hashed)
+    db.add(nuevo_usuario)
+    db.commit()
+    db.refresh(nuevo_usuario)
+    return nuevo_usuario
