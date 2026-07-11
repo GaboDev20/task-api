@@ -2,6 +2,8 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import crud, schemas, models
 from app.database import engine, get_db, Base
+from fastapi.security import OAuth2PasswordRequestForm
+from app.security import verify_password, create_access_token
 
 Base.metadata.create_all(bind=engine) #Crea las tablas si no existen
 
@@ -43,3 +45,13 @@ def register(user: schemas.UserCreate, db:Session = Depends(get_db)):
         raise HTTPException(status_code = 400, detail = "Este Email Ya Está Registrado" )
     return crud.create_user(db,user)
     
+@app.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+        usuario = crud.get_user_by_email(db, form_data.username)
+        if usuario is None:
+            raise HTTPException(status_code = 401, detail="Credenciales Incorrectas")
+        if not verify_password(form_data.password, usuario.hashed_password):
+            raise HTTPException(status_code=401, detail="Credenciales Incorrectas")
+        
+        access_token = create_access_token(data={"sub": usuario.email})
+        return {"access_tokens": access_token, "token_type": "bearer"}
