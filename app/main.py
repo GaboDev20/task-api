@@ -4,6 +4,8 @@ from app import crud, schemas, models
 from app.database import engine, get_db, Base
 from fastapi.security import OAuth2PasswordRequestForm
 from app.security import verify_password, create_access_token
+from app.dependencies import get_current_user
+
 
 Base.metadata.create_all(bind=engine) #Crea las tablas si no existen
 
@@ -14,7 +16,7 @@ def create_Task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
     return crud.create_task(db, task)
 
 @app.get("/tasks", response_model = list[schemas.TaskOut])
-def list_tasks(db: Session = Depends(get_db)):
+def list_tasks(db: Session = Depends(get_db), usuario_actual: models.User = Depends(get_current_user)):
     return crud.get_tasks(db)
 
 @app.get("/tasks/{task_id}", response_model=schemas.TaskOut)
@@ -55,3 +57,4 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         
         access_token = create_access_token(data={"sub": usuario.email})
         return {"access_tokens": access_token, "token_type": "bearer"}
+
